@@ -200,7 +200,7 @@ class nas():
         self.delta = delta
         self.epsilon = epsilon
         self.samples = []
-        self.running_mean = []
+        self.running_mean = [0]
         self.sample_sum = 0
         self.running_variance = [0]
         self.ct = []
@@ -230,7 +230,7 @@ class nas():
     def cond_check(self):
         if self.current_step == 1:
             return True
-        if np.abs(self.running_mean[-1]) <= self.ct[-1]*(1+(1/self.epsilon)):
+        if np.abs(self.running_mean[-1]) >= self.ct[-1]*(1+(1/self.epsilon)):
             return True
         else:
             return False

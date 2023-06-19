@@ -10,7 +10,7 @@ from numpy import linalg as LA
 sys.path.append(os.path.abspath("./libary"))
 from gates import *
 from functions import *
-from bernstein_class import nas as nas
+from bernstein_class import nas
 sys.path.append(os.path.abspath("./config"))
 from circuit import *
 # Current Date and Time for saving data
@@ -163,6 +163,6 @@ plt.legend()
 folder = f'output/NAS/VQE_a{alpha:.3f}_e{eps:.3f}/'
 os.makedirs(folder,exist_ok = True)
 plt.title(rf'$\epsilon={eps}$, $\alpha = {alpha}$, Num of Steps$={N_step}$')
-plt.savefig(folder+f'fig'+now+'.png')
-np.savetxt(folder+f'data'+now+'.txt', (arr_it,arr_par1,arr_par2, arr_energy, arr_var, arr_est_energy, arr_est_var, arr_steps), delimiter=',')
-#splt.show()
+#plt.savefig(folder+f'fig'+now+'.png')
+#np.savetxt(folder+f'data'+now+'.txt', (arr_it,arr_par1,arr_par2, arr_energy, arr_var, arr_est_energy, arr_est_var, arr_steps), delimiter=',')
+plt.show()
