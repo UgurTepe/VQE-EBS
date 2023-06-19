@@ -10,7 +10,7 @@ from numpy import linalg as LA
 sys.path.append(os.path.abspath("./libary"))
 from gates import *
 from functions import *
-from bernstein_class import Bernstein as bernstein
+from bernstein_class import nas as nas
 sys.path.append(os.path.abspath("./config"))
 from circuit import *
 # Current Date and Time for saving data
@@ -23,7 +23,7 @@ Initialization of Parameters
 th1, th2 = np.random.uniform(0, np.pi, 2)  # For random starting parameters
 par1 = 0  # Initial parameters
 par2 = 0
-alpha = 0.2 # Gradient descent
+alpha = 0.25 # Gradient descent
 eps = 0.05  # SPSA
 max_n = 100  # Max number of steps for GradDe
 max_sample = 1*10**4  # Max number of samples for EBS
@@ -73,9 +73,9 @@ for i in range(max_n):
     Loops for EBS algorithm
     '''
     # Resets EBS every outer loop iteration
-    ebs = bernstein(delta=0.1, epsilon=0.1, rng=4)
-    ebs_shift_plus = bernstein(delta=0.1, epsilon=0.1, rng=4)
-    ebs_shift_minus = bernstein(delta=0.1, epsilon=0.1, rng=4)
+    ebs = nas(delta=0.1, epsilon=0.1)
+    ebs_shift_plus = nas(delta=0.1, epsilon=0.1)
+    ebs_shift_minus = nas(delta=0.1, epsilon=0.1)
 
     # EBS for Energy(x,y)
     while ebs.cond_check():
@@ -85,7 +85,6 @@ for i in range(max_n):
     # Saving values
     it_normal = ebs.get_step()
     est_energy = ebs.get_estimate()
-    est_variance = ebs.get_var()[-1]
     energy = expected_value(state, operator)
     variance = expected_value(state, np.linalg.matrix_power(
         operator,2)) - expected_value(state, operator)**2
@@ -108,7 +107,7 @@ for i in range(max_n):
     arr_energy.append(energy)
     arr_est_energy.append(est_energy)
     arr_var.append(variance)
-    arr_est_var.append(est_variance)
+    arr_est_var.append(0)
     arr_par1.append(par1)
     arr_par2.append(par2)
     arr_steps.append(it_normal)
@@ -161,9 +160,9 @@ plt.plot(arr_par1[0],arr_par2[0],'x',label = 'Start')
 plt.plot(arr_par1[-1],arr_par2[-1],'o',label = 'End')
 plt.legend()
 
-folder = f'output/OptParam/VQE_a{alpha:.3f}_e{eps:.3f}/'
+folder = f'output/NAS/VQE_a{alpha:.3f}_e{eps:.3f}/'
 os.makedirs(folder,exist_ok = True)
 plt.title(rf'$\epsilon={eps}$, $\alpha = {alpha}$, Num of Steps$={N_step}$')
 plt.savefig(folder+f'fig'+now+'.png')
 np.savetxt(folder+f'data'+now+'.txt', (arr_it,arr_par1,arr_par2, arr_energy, arr_var, arr_est_energy, arr_est_var, arr_steps), delimiter=',')
-#plt.show()
+#splt.show()

@@ -27,12 +27,12 @@ class Welford():
         return np.sqrt(self.S / (self.n - 1))
 
 
-class Bernstein_simple():
+class ebs_simple():
     # Initlialize Bernstein with epsilon and delta
-    def __init__(self, delta=0.1, epsilon=0.1, rng=1):
+    def __init__(self, delta=0.1, epsilon=0.1, range_of_rndvar=1):
         self.delta = delta
         self.epsilon = epsilon
-        self.rng = rng
+        self.range_of_rndvar = range_of_rndvar
         self.samples = []
         self.running_mean = []
         self.sample_sum = 0
@@ -82,7 +82,7 @@ class Bernstein_simple():
         ln_vari = self.p*np.log(time, dtype=np.float64)/time
         ln_compl = (ln_constant+ln_vari)
         result = (
-            np.sqrt(2*self.running_variance[-1]*ln_compl) + (3*self.rng*ln_compl))
+            np.sqrt(2*self.running_variance[-1]*ln_compl) + (3*self.range_of_rndvar*ln_compl))
         return result
 
     def get_ct(self):
@@ -104,13 +104,12 @@ class Bernstein_simple():
     def get_step(self):
         return self.current_step
 
-
-class Bernstein():
+class ebs():
     # Initlialize Bernstein with epsilon and delta
-    def __init__(self, delta=0.1, epsilon=0.1, rng=1):
+    def __init__(self, delta=0.1, epsilon=0.1, range_of_rndvar=1):
         self.delta = delta
         self.epsilon = epsilon
-        self.rng = rng
+        self.range_of_rndvar = range_of_rndvar
         self.samples = []
         self.running_mean = []
         self.sample_sum = 0
@@ -173,7 +172,7 @@ class Bernstein():
         ln_vari = self.p*np.log(time, dtype=np.float64)/time
         ln_compl = (ln_constant+ln_vari)
         result = (
-            np.sqrt(2*self.running_variance[-1]*ln_compl) + (3*self.rng*ln_compl))
+            np.sqrt(2*self.running_variance[-1]*ln_compl) + (3*self.range_of_rndvar*ln_compl))
         return result
 
     def get_ct(self):
@@ -195,3 +194,64 @@ class Bernstein():
     def get_step(self):
         return self.current_step
 
+class nas():
+    # Initlialize Bernstein with epsilon and delta
+    def __init__(self, delta=0.1, epsilon=0.1):
+        self.delta = delta
+        self.epsilon = epsilon
+        self.samples = []
+        self.running_mean = []
+        self.sample_sum = 0
+        self.running_variance = [0]
+        self.ct = []
+        self.current_step = 1
+
+    # Should add sample to self.samples and should update all the parameters
+    def add_sample(self, sample):
+        # Insert new sample
+        self.samples.append(sample)
+
+        # cummulative sum
+        self.sample_sum += sample
+
+        # Calculates the running mean efficiently with sample_sum
+        cur_mean = np.divide(self.sample_sum, self.current_step)
+        self.running_mean.append(cur_mean)
+
+        # Update ct
+        self.ct.append(self.calc_ct(self.current_step))
+
+        # Update current step
+        self.current_step = self.current_step + 1
+
+    # Either returns true or false, depending on wheter EBS stopped or not
+    # Loop in main program should check this every iteration to determine
+    # Loop in application should check for this to be False --> termiante
+    def cond_check(self):
+        if self.current_step == 1:
+            return True
+        if np.abs(self.running_mean[-1]) <= self.ct[-1]*(1+(1/self.epsilon)):
+            return True
+        else:
+            return False
+
+    # Just a function to calculate c_t for a given time t
+    def calc_ct(self, time):
+        dt = (self.current_step*(self.current_step+1))/self.delta
+        result = np.sqrt(np.log(dt)/(2*self.current_step))
+        return result
+
+    def get_ct(self):
+        return np.asarray(self.ct)
+
+    # Should return the latest estimated mean
+    def get_estimate(self):
+        return self.running_mean[-1]
+
+    # Should return the array of the estimated means
+    def get_mean(self):
+        return np.asarray(self.running_mean)
+
+    # Returns current iteration/ step
+    def get_step(self):
+        return self.current_step

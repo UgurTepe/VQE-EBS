@@ -43,6 +43,7 @@ grad1 = 0
 grad2 = 0
 N_step = 0
 it_inside_minima = 0
+it_normal = 0
 arr_energy = []
 arr_est_energy = []
 arr_var = []
@@ -52,6 +53,10 @@ arr_par2 = []
 arr_steps = []
 arr_it = []
 arr_ct = []
+
+sample = 0
+sample_plus = 0
+sample_minus = 0
 
 
 print(f'Initial parameters: Theta1 = {par1:.3f}, Theta2 = {par2:.3f}')
@@ -68,47 +73,40 @@ for i in range(max_n):
         par1 + eps*rnd1, par2 + eps*rnd2, np.array([1, 0, 0, 0]))
     state_shift_minus = circuit_theta(
         par1 - eps*rnd1, par2 - eps*rnd2, np.array([1, 0, 0, 0]))
-
+    
     '''
-    Loops for EBS algorithm
+    Resetting Sampling arrays 
     '''
-    # Resets EBS every outer loop iteration
-    ebs = bernstein(delta=0.1, epsilon=0.1, rng=4)
-    ebs_shift_plus = bernstein(delta=0.1, epsilon=0.1, rng=4)
-    ebs_shift_minus = bernstein(delta=0.1, epsilon=0.1, rng=4)
-
+    sample = 0
+    sample_plus = 0
+    sample_minus = 0
+    
     # EBS for Energy(x,y)
-    while ebs.cond_check():
-        ebs.add_sample(np.sum(measure(state, 'zx')))
-        if ebs.get_step() > max_sample:
-            break
+    for n in range(max_sample):
+        sample += np.sum((measure(state, 'zx')))
+
     # Saving values
-    it_normal = ebs.get_step()
-    est_energy = ebs.get_estimate()
-    est_variance = ebs.get_var()[-1]
+    it_normal = max_sample  
+    est_energy = sample / max_sample
     energy = expected_value(state, operator)
     variance = expected_value(state, np.linalg.matrix_power(
         operator,2)) - expected_value(state, operator)**2
 
     # EBS for Energy(x+εΔ,y+εΔ)
-    while ebs_shift_plus.cond_check():
-        ebs_shift_plus.add_sample(np.sum(measure(state_shift_plus, 'zx')))
-        if ebs_shift_plus.get_step() > max_sample:
-            break
-    energy_shifted_plus = ebs_shift_plus.get_estimate()
+    for n in range(max_sample):
+        sample_plus += np.sum((measure(state_shift_plus, 'zx')))
+    energy_shifted_plus = sample_plus / max_sample
 
     # EBS for Energy(x-εΔ,y-εΔ)
-    while ebs_shift_minus.cond_check():
-        ebs_shift_minus.add_sample(np.sum(measure(state_shift_minus, 'zx')))
-        if ebs_shift_minus.get_step() > max_sample:
-            break
-    energy_shifted_minus = ebs_shift_minus.get_estimate()
-
+    for n in range(max_sample):
+        sample_minus += np.sum((measure(state_shift_minus, 'zx')))
+    energy_shifted_minus = sample_minus / max_sample     
+    
     # Save data
     arr_energy.append(energy)
     arr_est_energy.append(est_energy)
     arr_var.append(variance)
-    arr_est_var.append(est_variance)
+    arr_est_var.append(0)
     arr_par1.append(par1)
     arr_par2.append(par2)
     arr_steps.append(it_normal)
@@ -161,7 +159,7 @@ plt.plot(arr_par1[0],arr_par2[0],'x',label = 'Start')
 plt.plot(arr_par1[-1],arr_par2[-1],'o',label = 'End')
 plt.legend()
 
-folder = f'output/OptParam/VQE_a{alpha:.3f}_e{eps:.3f}/'
+folder = f'output/NoEBS/VQE_a{alpha:.3f}_e{eps:.3f}/'
 os.makedirs(folder,exist_ok = True)
 plt.title(rf'$\epsilon={eps}$, $\alpha = {alpha}$, Num of Steps$={N_step}$')
 plt.savefig(folder+f'fig'+now+'.png')
