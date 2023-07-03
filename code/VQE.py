@@ -10,7 +10,7 @@ from numpy import linalg as LA
 sys.path.append(os.path.abspath("./libary"))
 from gates import *
 from functions import *
-from bernstein_class import ebs as bernstein
+from Algorithms import eba as bernstein
 sys.path.append(os.path.abspath("./config"))
 from circuit import *
 # Current Date and Time for saving data
@@ -22,13 +22,14 @@ Initialization of Parameters
 '''
 par1 = 0  # Initial parameters
 par2 = 0
-alpha = 0.2 # Gradient descent
-eps = 0.1 # SPSA
+alpha = 0.25 # Gradient descent
+eps = 0.1
+shift = 0
 max_n = 100  # Max number of steps for GradDe
 max_sample = 1*10**4  # Max number of samples for EBS
 bound = 2*np.pi  # Interval of plot
 break_flag = False
-max_inside_minima = 1  # Variable to test convergence of algorithm within x% of minima
+max_inside_minima = 5  # Variable to test convergence of algorithm within x% of minima
 
 '''
 Initialization of Arrays and Variables 
@@ -55,16 +56,6 @@ arr_ct = []
 
 print(f'Initial parameters: Theta1 = {par1:.3f}, Theta2 = {par2:.3f}')
 for i in range(max_n):
-    energy = 0
-    est_energy = 0
-    variance = 0
-    energy_shifted_plus = 0
-    energy_shifted_minus = 0
-    grad1 = 0
-    grad2 = 0
-    N_step = 0
-    it_inside_minima = 0
-
     # set states to |00>
     # Apply circuit on state
     state = circuit_theta(par1, par2, np.array([1, 0, 0, 0]))
@@ -81,18 +72,18 @@ for i in range(max_n):
     Loops for EBS algorithm
     '''
     # Resets EBS every outer loop iteration
-    ebs = bernstein(delta=0.1, epsilon=0.1, range_of_rndvar=4)
-    ebs_shift_plus = bernstein(delta=0.1, epsilon=0.1, range_of_rndvar=4)
-    ebs_shift_minus = bernstein(delta=0.1, epsilon=0.1, range_of_rndvar=4)
+    ebs = bernstein(delta=0.1, epsilon= 0.2, range_of_rndvar=4)
+    ebs_shift_plus = bernstein(delta=0.1, epsilon= 0.2, range_of_rndvar=4)
+    ebs_shift_minus = bernstein(delta=0.1, epsilon= 0.2, range_of_rndvar=4)
 
     # EBS for Energy(x,y)
     while ebs.cond_check():
-        ebs.add_sample(np.sum(measure(state, 'zx'))+5.000)
+        ebs.add_sample(np.sum(measure(state, 'zx'))+shift)
         if ebs.get_step() > max_sample:
             break
     # Saving values
     it_normal = ebs.get_step()
-    est_energy = ebs.get_estimate()-5.000
+    est_energy = ebs.get_estimate()-shift
     est_variance = ebs.get_var()[-1]
     energy = expected_value(state, operator)
     variance = expected_value(state, np.linalg.matrix_power(
@@ -100,17 +91,17 @@ for i in range(max_n):
 
     # EBS for Energy(x+εΔ,y+εΔ)
     while ebs_shift_plus.cond_check():
-        ebs_shift_plus.add_sample(np.sum(measure(state_shift_plus, 'zx'))+5.000)
+        ebs_shift_plus.add_sample(np.sum(measure(state_shift_plus, 'zx'))+shift)
         if ebs_shift_plus.get_step() > max_sample:
             break
-    energy_shifted_plus = ebs_shift_plus.get_estimate()-5.000
+    energy_shifted_plus = ebs_shift_plus.get_estimate()-shift
 
     # EBS for Energy(x-εΔ,y-εΔ)
     while ebs_shift_minus.cond_check():
-        ebs_shift_minus.add_sample(np.sum(measure(state_shift_minus, 'zx'))+5.000)
+        ebs_shift_minus.add_sample(np.sum(measure(state_shift_minus, 'zx'))+shift)
         if ebs_shift_minus.get_step() > max_sample:
             break
-    energy_shifted_minus = ebs_shift_minus.get_estimate()-5.000
+    energy_shifted_minus = ebs_shift_minus.get_estimate()-shift
 
     # Save data
     arr_energy.append(energy)
@@ -144,20 +135,20 @@ for i in range(max_n):
     par2 -= alpha*grad2
 
     # Ensures convergence of the algorithm
-    if i > 1 and np.abs(est_energy + 2) <= 0.2:
-        if break_flag == True and it_inside_minima >= max_inside_minima:
-            print(
-                '******************************************************************')
-            print('Aborted: within 0.2 of minima')
-            print(f'At i = {i}')
-            print(
-                '******************************************************************')
-            print(f'Energy = {est_energy}')
-            N_step = i
+    if np.abs(est_energy + 2) <= 0.2:
+        print(
+            '******************************************************************')
+        print('Aborted: within 0.2 of minima')
+        print(f'At i = {i}')
+        print(
+            '******************************************************************')
+        print(f'Energy = {est_energy}')
+        N_step = i
+        it_inside_minima += 1
+        if it_inside_minima >= max_inside_minima:
             break
         else:
-            it_inside_minima += 1
-            break_flag = True
+            continue
 
 
 '''
@@ -171,9 +162,10 @@ plt.plot(arr_par1[0],arr_par2[0],'x',label = 'Start')
 plt.plot(arr_par1[-1],arr_par2[-1],'o',label = 'End')
 plt.legend()
 
-folder = f'output/test2/VQE_a{alpha:.3f}_e{eps:.3f}/'
+folder = f'output/eba_test1/VQE_a{alpha:.3f}_e{eps:.3f}/'
+#folder = f'output/shift_test/shift{shift:.1f}/'
 os.makedirs(folder,exist_ok = True)
-plt.title(rf'$\epsilon={eps}$, $\alpha = {alpha}$, Num of Steps$={N_step}$')
+plt.title(rf'$\epsilon={eps}$, $\alpha = {alpha}$, Num of Steps$={N_step-5}$')
 plt.savefig(folder+f'fig'+now+'.png')
 np.savetxt(folder+f'data'+now+'.txt', (arr_it,arr_par1,arr_par2, arr_energy, arr_var, arr_est_energy, arr_est_var, arr_steps), delimiter=',')
 #plt.show()
