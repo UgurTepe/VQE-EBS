@@ -10,7 +10,7 @@ from numpy import linalg as LA
 sys.path.append(os.path.abspath("./libary"))
 from gates import *
 from functions import *
-from Algorithms import eba as bernstein
+from Algorithms import nas_abs as bernstein
 sys.path.append(os.path.abspath("./config"))
 from circuit import *
 # Current Date and Time for saving data
@@ -162,7 +162,7 @@ plt.plot(arr_par1[0],arr_par2[0],'x',label = 'Start')
 plt.plot(arr_par1[-1],arr_par2[-1],'o',label = 'End')
 plt.legend()
 
-folder = f'output/eba_test1/VQE_a{alpha:.3f}_e{eps:.3f}/'
+folder = f'output/eba_nas/nas/VQE_a{alpha:.3f}_e{eps:.3f}/'
 #folder = f'output/shift_test/shift{shift:.1f}/'
 os.makedirs(folder,exist_ok = True)
 plt.title(rf'$\epsilon={eps}$, $\alpha = {alpha}$, Num of Steps$={N_step-5}$')

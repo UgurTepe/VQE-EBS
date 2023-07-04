@@ -196,9 +196,10 @@ class ebs():
 
 class nas():
     # Initlialize Bernstein with epsilon and delta
-    def __init__(self, delta=0.1, epsilon=0.1):
+    def __init__(self, delta=0.1, epsilon=0.1,range_of_rndvar = 1):
         self.delta = delta
         self.epsilon = epsilon
+        self.range_of_rndvar = range_of_rndvar
         self.samples = []
         self.running_mean = []
         self.sample_sum = 0
@@ -238,7 +239,7 @@ class nas():
     # Just a function to calculate c_t for a given time t
     def calc_ct(self, time):
         dt = (self.current_step*(self.current_step+1))/self.delta
-        result = np.sqrt(np.log(dt)/(2*self.current_step))
+        result = self.range_of_rndvar*np.sqrt(np.log(dt)/(2*self.current_step))
         return result
 
     def get_ct(self):
@@ -335,9 +336,10 @@ class eba():
 
 class nas_abs():
     # Initlialize Bernstein with epsilon and delta
-    def __init__(self, delta=0.1, epsilon=0.1):
+    def __init__(self, delta=0.1, epsilon=0.1,range_of_rndvar = 1):
         self.delta = delta
         self.epsilon = epsilon
+        self.range_of_rndvar = range_of_rndvar
         self.samples = []
         self.running_mean = []
         self.sample_sum = 0
@@ -377,7 +379,7 @@ class nas_abs():
     # Just a function to calculate c_t for a given time t
     def calc_ct(self, time):
         dt = (self.current_step*(self.current_step+1))/self.delta
-        result = np.sqrt(np.log(dt)/(2*self.current_step))
+        result = self.range_of_rndvar*np.sqrt(np.log(dt)/(2*self.current_step))
         return result
 
     def get_ct(self):
@@ -390,7 +392,8 @@ class nas_abs():
     # Should return the array of the estimated means
     def get_mean(self):
         return np.asarray(self.running_mean)
-
+    def get_var(self):
+        return [0]
     # Returns current iteration/ step
     def get_step(self):
         return self.current_step
